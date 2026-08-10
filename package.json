@@ -1,0 +1,42 @@
+{
+  "name": "peoplecore-desktop",
+  "version": "0.1.0",
+  "description": "PeopleCore - Employee Information System (Electron + React + SQLite)",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "start": "electron .",
+    "build:renderer": "vite build",
+    "build": "npm run build:renderer && electron-builder",
+    "package": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.chambata.peoplecore",
+    "files": [
+      "dist/**",
+      "package.json",
+      "src/main.js",
+      "src/preload.js",
+      "src/db/**",
+      "data/**"
+    ]
+  },
+  "author": "chambata",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^8.0.1",
+    "electron": "^26.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.2.0",
+    "typescript": "^5.1.6",
+    "vite": "^5.2.0",
+    "wait-on": "^7.0.1",
+    "electron-builder": "^24.7.0"
+  }
+}
