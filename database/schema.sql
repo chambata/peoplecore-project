@@ -20,5 +20,8 @@ CREATE TABLE IF NOT EXISTS employees (
   phone_number TEXT,
   email_address TEXT,
   photo_path TEXT,
+  photo_thumbnail_path TEXT,
+  department TEXT,
+  employee_code TEXT,
   created_at TEXT DEFAULT (datetime('now'))
 );
