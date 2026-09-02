@@ -1,0 +1,11 @@
+body { font-family: system-ui, Arial; margin: 12px }
+.app h1 { margin-bottom: 8px }
+.container { display: flex; gap: 16px }
+.list { flex: 1 }
+.form { width: 420px; border: 1px solid #ddd; padding: 12px; border-radius: 6px }
+.field-row { display: flex; gap: 8px; margin-bottom: 8px }
+.field-row input { flex: 1; padding: 6px }
+.actions { display: flex; gap: 8px }
+table { width: 100%; border-collapse: collapse }
+th, td { padding: 8px; border-bottom: 1px solid #eee }
+.photo-preview { margin-top: 8px; font-size: 12px; color: #555 }
