@@ -18,11 +18,16 @@ const empty = {
   year_obtained: '',
   phone_number: '',
   email_address: '',
-  photo_path: ''
+  photo_path: '',
+  photo_thumbnail_path: '',
+  department: '',
+  employee_code: ''
 }
 
 export default function EmployeeForm({ employee, onSaved }: any) {
   const [form, setForm] = useState<any>(empty)
+  const [errors, setErrors] = useState<any>({})
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (employee) setForm(employee)
@@ -34,9 +39,24 @@ export default function EmployeeForm({ employee, onSaved }: any) {
     setForm((s: any) => ({ ...s, [name]: value }))
   }
 
+  const validate = () => {
+    const e: any = {}
+    if (!form.forename) e.forename = 'Required'
+    if (!form.surname) e.surname = 'Required'
+    if (form.email_address && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email_address)) e.email_address = 'Invalid email'
+    if (form.phone_number && !/^[0-9+\-()\s]{6,20}$/.test(form.phone_number)) e.phone_number = 'Invalid phone'
+    if (form.year_obtained && !/^[0-9]{4}$/.test(form.year_obtained)) e.year_obtained = 'Invalid year'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
   const handleSave = async () => {
-    // very light validation
-    if (!form.forename || !form.surname) return alert('Please provide name')
+    if (!validate()) return
+    // ensure employee_code
+    if (!form.employee_code) {
+      form.employee_code = `EMP${Date.now()}`
+    }
+
     if (form.id) {
       await window.api.updateEmployee(form.id, form)
     } else {
@@ -45,11 +65,18 @@ export default function EmployeeForm({ employee, onSaved }: any) {
     onSaved()
   }
 
-  const handlePhoto = (e: any) => {
+  const handlePhoto = async (e: any) => {
     const file = e.target.files[0]
     if (!file) return
-    // NOTE: scaffold only — actual file copy to data/photos should be implemented in main/db side.
-    setForm((s: any) => ({ ...s, photo_path: file.name }))
+    const sourcePath = (file as any).path // electron file path
+    if (!sourcePath) return alert('File path not available')
+
+    setUploading(true)
+    const res = await window.api.uploadPhoto(sourcePath)
+    setUploading(false)
+
+    if (res && res.error) return alert('Upload failed: ' + res.error)
+    setForm((s: any) => ({ ...s, photo_path: res.photoPath, photo_thumbnail_path: res.thumbnailPath }))
   }
 
   return (
@@ -60,11 +87,15 @@ export default function EmployeeForm({ employee, onSaved }: any) {
         <input name="middle_name" value={form.middle_name} onChange={handleChange} placeholder="Middle name" />
         <input name="surname" value={form.surname} onChange={handleChange} placeholder="Surname" />
       </div>
+      {errors.forename && <div className="error">{errors.forename}</div>}
+      {errors.surname && <div className="error">{errors.surname}</div>}
 
       <div className="field-row">
         <input name="email_address" value={form.email_address} onChange={handleChange} placeholder="Email" />
         <input name="phone_number" value={form.phone_number} onChange={handleChange} placeholder="Phone" />
       </div>
+      {errors.email_address && <div className="error">{errors.email_address}</div>}
+      {errors.phone_number && <div className="error">{errors.phone_number}</div>}
 
       <div className="field-row">
         <input name="current_position" value={form.current_position} onChange={handleChange} placeholder="Position" />
@@ -72,9 +103,15 @@ export default function EmployeeForm({ employee, onSaved }: any) {
       </div>
 
       <div className="field-row">
+        <input name="department" value={form.department} onChange={handleChange} placeholder="Department" />
+        <input name="employee_code" value={form.employee_code} onChange={handleChange} placeholder="Employee code (auto)" />
+      </div>
+
+      <div className="field-row">
         <label>Passport photo</label>
         <input type="file" accept="image/*" onChange={handlePhoto} />
-        {form.photo_path && <div className="photo-preview">{form.photo_path}</div>}
+        {uploading && <div>Uploading...</div>}
+        {form.photo_thumbnail_path && <img src={`file://${form.photo_thumbnail_path}`} alt="thumb" style={{ width: 80, height: 80, objectFit: 'cover' }} />}
       </div>
 
       <div className="actions">

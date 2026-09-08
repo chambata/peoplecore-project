@@ -13,8 +13,10 @@ export default function EmployeeList({ employees, onEdit, onRefresh }: any) {
       <table>
         <thead>
           <tr>
+            <th>Code</th>
             <th>Name</th>
             <th>Position</th>
+            <th>Department</th>
             <th>Phone</th>
             <th>Email</th>
             <th></th>
@@ -23,8 +25,10 @@ export default function EmployeeList({ employees, onEdit, onRefresh }: any) {
         <tbody>
           {employees.map((e: any) => (
             <tr key={e.id}>
+              <td>{e.employee_code}</td>
               <td>{e.surname}, {e.forename} {e.middle_name || ''}</td>
               <td>{e.current_position}</td>
+              <td>{e.department}</td>
               <td>{e.phone_number}</td>
               <td>{e.email_address}</td>
               <td>

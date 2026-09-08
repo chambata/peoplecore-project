@@ -1,4 +1,4 @@
-// Simple SQLite wrapper using better-sqlite3
+// Simple SQLite wrapper using better-sqlite3 with lightweight migrations
 const path = require('path')
 const fs = require('fs')
 const Database = require('better-sqlite3')
@@ -11,8 +11,22 @@ let db
 
 function init() {
   db = new Database(dbPath)
-  const schema = fs.readFileSync(path.join(__dirname, '..', '..', 'database', 'schema.sql'), 'utf-8')
+  const schemaPath = path.join(__dirname, '..', '..', 'database', 'schema.sql')
+  const schema = fs.readFileSync(schemaPath, 'utf-8')
   db.exec(schema)
+
+  // lightweight migration: add new columns if missing
+  const cols = db.prepare("PRAGMA table_info('employees')").all().map(r => r.name)
+  const addIfMissing = (colDef) => {
+    const name = colDef.split(' ')[0]
+    if (!cols.includes(name)) {
+      db.exec(`ALTER TABLE employees ADD COLUMN ${colDef}`)
+    }
+  }
+
+  addIfMissing('photo_thumbnail_path TEXT')
+  addIfMissing('department TEXT')
+  addIfMissing('employee_code TEXT')
 }
 
 function getAllEmployees() {

@@ -1,11 +1,15 @@
 /*
-  Main Electron process (JavaScript for simplicity)
-  - Loads dev URL when ELECTRON_START_URL is set by dev flow (we use wait-on)
+  Main Electron process (JavaScript)
+  - Loads dev URL when ELECTRON_START_URL is set by dev flow
   - Loads built index.html in production
+  - Adds IPC handler for uploading photos (copies file into data/photos and generates thumbnail)
 */
 
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const fs = require('fs')
+const os = require('os')
+const Jimp = require('jimp')
 
 const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_START_URL
 
@@ -31,6 +35,12 @@ function createWindow() {
 
 // simple DB layer
 const db = require('./db/db')
+
+const dataDir = path.join(__dirname, '..', 'data')
+const photosDir = path.join(dataDir, 'photos')
+const thumbsDir = path.join(photosDir, 'thumbs')
+if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir, { recursive: true })
+if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true })
 
 app.whenReady().then(() => {
   db.init()
@@ -64,4 +74,44 @@ ipcMain.handle('employees:update', async (event, id, payload) => {
 
 ipcMain.handle('employees:delete', async (event, id) => {
   return db.deleteEmployee(id)
+})
+
+// Photo upload handler: copies a file from sourcePath into data/photos and writes a thumbnail.
+// Expects sourcePath to be a path on the local filesystem (from file input in Electron renderer).
+ipcMain.handle('employees:uploadPhoto', async (event, sourcePath) => {
+  try {
+    if (!sourcePath) throw new Error('No source path provided')
+    // validate file exists
+    if (!fs.existsSync(sourcePath)) throw new Error('Source file does not exist')
+
+    const stat = fs.statSync(sourcePath)
+    const maxSize = 5 * 1024 * 1024 // 5 MB
+    if (stat.size > maxSize) throw new Error('File too large (max 5 MB)')
+
+    const ext = path.extname(sourcePath).toLowerCase()
+    if (!['.jpg', '.jpeg', '.png'].includes(ext)) throw new Error('Unsupported image format')
+
+    const timestamp = Date.now()
+    const fileName = `employee_${timestamp}${ext}`
+    const destPath = path.join(photosDir, fileName)
+
+    // copy file
+    fs.copyFileSync(sourcePath, destPath)
+
+    // generate thumbnail 256x256
+    const thumbName = `thumb_${timestamp}.png`
+    const thumbPath = path.join(thumbsDir, thumbName)
+
+    const image = await Jimp.read(destPath)
+    image.cover(256, 256) // crop to cover
+    await image.writeAsync(thumbPath)
+
+    // return relative paths (relative to project root /data/photos/...)
+    const relPhoto = path.join('data', 'photos', fileName)
+    const relThumb = path.join('data', 'photos', 'thumbs', thumbName)
+
+    return { photoPath: relPhoto, thumbnailPath: relThumb }
+  } catch (err) {
+    return { error: err.message }
+  }
 })
