@@ -52,16 +52,20 @@ export default function EmployeeForm({ employee, onSaved }: any) {
 
   const handleSave = async () => {
     if (!validate()) return
-    // ensure employee_code
-    if (!form.employee_code) {
-      form.employee_code = `EMP${Date.now()}`
+
+    const payload = { ...form }
+    if (!payload.employee_code) payload.employee_code = `EMP${Date.now()}`
+
+    if (payload.id) {
+      await window.api.updateEmployee(payload.id, payload)
+    } else {
+      const res = await window.api.addEmployee(payload)
+      if (res && res.id) {
+        payload.id = res.id
+        setForm(payload)
+      }
     }
 
-    if (form.id) {
-      await window.api.updateEmployee(form.id, form)
-    } else {
-      await window.api.addEmployee(form)
-    }
     onSaved()
   }
 
@@ -111,7 +115,7 @@ export default function EmployeeForm({ employee, onSaved }: any) {
         <label>Passport photo</label>
         <input type="file" accept="image/*" onChange={handlePhoto} />
         {uploading && <div>Uploading...</div>}
-        {form.photo_thumbnail_path && <img src={`file://${form.photo_thumbnail_path}`} alt="thumb" style={{ width: 80, height: 80, objectFit: 'cover' }} />}
+        {form.photo_thumbnail_path && <img src={form.photo_thumbnail_path} alt="thumb" style={{ width: 80, height: 80, objectFit: 'cover' }} />}
       </div>
 
       <div className="actions">

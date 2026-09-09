@@ -9,6 +9,7 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
+const { pathToFileURL } = require('url')
 const Jimp = require('jimp')
 
 const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_START_URL
@@ -91,6 +92,11 @@ ipcMain.handle('employees:uploadPhoto', async (event, sourcePath) => {
     const ext = path.extname(sourcePath).toLowerCase()
     if (!['.jpg', '.jpeg', '.png'].includes(ext)) throw new Error('Unsupported image format')
 
+    // Optional safety: warn if uploading from outside the user's home directory
+    if (!sourcePath.startsWith(os.homedir())) {
+      console.warn('Uploading file from outside home directory:', sourcePath)
+    }
+
     const timestamp = Date.now()
     const fileName = `employee_${timestamp}${ext}`
     const destPath = path.join(photosDir, fileName)
@@ -106,11 +112,11 @@ ipcMain.handle('employees:uploadPhoto', async (event, sourcePath) => {
     image.cover(256, 256) // crop to cover
     await image.writeAsync(thumbPath)
 
-    // return relative paths (relative to project root /data/photos/...)
-    const relPhoto = path.join('data', 'photos', fileName)
-    const relThumb = path.join('data', 'photos', 'thumbs', thumbName)
+    // return absolute file:// URLs so renderer can load them cross-platform
+    const absPhotoUrl = pathToFileURL(destPath).href
+    const absThumbUrl = pathToFileURL(thumbPath).href
 
-    return { photoPath: relPhoto, thumbnailPath: relThumb }
+    return { photoPath: absPhotoUrl, thumbnailPath: absThumbUrl }
   } catch (err) {
     return { error: err.message }
   }

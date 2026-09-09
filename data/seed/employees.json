@@ -1,0 +1,25 @@
+[
+  {
+    "forename": "Jane",
+    "middle_name": "A.",
+    "surname": "Doe",
+    "date_of_birth": "1990-05-15",
+    "nationality": "Ugandan",
+    "nrc_number": "123456789",
+    "current_position": "Software Engineer",
+    "employment_type": "Full-time",
+    "date_first_appointment": "2018-01-10",
+    "date_present_appointment": "2022-06-01",
+    "date_retirement": "",
+    "social_security_number": "SSN12345",
+    "highest_qualification": "BSc Computer Science",
+    "institution_obtained": "Makerere University",
+    "year_obtained": "2015",
+    "phone_number": "+256701234567",
+    "email_address": "jane.doe@example.com",
+    "photo_path": "",
+    "photo_thumbnail_path": "",
+    "department": "Engineering",
+    "employee_code": "EMPDEMO001"
+  }
+]
